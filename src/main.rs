@@ -4,6 +4,9 @@ use anyhow::Result;
 use build::*;
 use clap::{Parser, Subcommand};
 
+const KRUN_AWSNITRO_DEFAULT_CMDLINE: &str =
+    "reboot=k pci=off console=ttyS0 random.trust_cpu=on root=/dev/ram0";
+
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cmd {
@@ -168,8 +171,8 @@ pub mod build {
         #[arg(short, long)]
         kernel: PathBuf,
         /// Enclave kernel cmdline.
-        #[arg(short, long, default_value = "/etc/krun-awsnitro/cmdline")]
-        cmdline: PathBuf,
+        #[arg(short, long)]
+        cmdline: Option<PathBuf>,
         /// krun-awsnitro init binary.
         #[arg(long, default_value = "/etc/krun-awsnitro/init")]
         init: PathBuf,
@@ -190,8 +193,11 @@ pub mod build {
     pub(super) fn build(args: BuildArgs) -> Result<()> {
         let build_info = build_info(&args)?;
 
-        let cmdline = fs::read_to_string(&args.cmdline)
-            .with_context(|| format!("unable to read cmdline from {}", args.cmdline.display()))?;
+        let cmdline = match args.cmdline {
+            Some(ref c) => fs::read_to_string(c)
+                .with_context(|| format!("unable to read cmdline from {}", c.display()))?,
+            None => String::from(KRUN_AWSNITRO_DEFAULT_CMDLINE),
+        };
 
         let flags = match args.arch {
             Arch::X86_64 => 0,
