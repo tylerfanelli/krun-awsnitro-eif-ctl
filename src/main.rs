@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+mod linux_mods;
+
 use anyhow::Result;
 use build::*;
 use clap::{Parser, Subcommand};
